@@ -1,0 +1,13 @@
+*.pyc
+.env
+__pycache__
+
+## credentials
+credentials/*
+
+## helm
+charts
+Chart.lock
+
+## data
+backend/api/data/*
