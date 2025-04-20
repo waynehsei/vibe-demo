@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import Cookies from 'js-cookie';
 import { notifications } from '@mantine/notifications';
 
-const USER_ID_COOKIE = 'user_id';
-const CONVERSATION_ID_COOKIE = 'conversation_id';
+const USER_ID_COOKIE = 'vibe_user_id';
+const CONVERSATION_ID_COOKIE = 'vibe_conversation_id';
 const COOKIE_EXPIRY = 1/24; // 60 minutes (1/24 of a day)
 
 interface AuthState {

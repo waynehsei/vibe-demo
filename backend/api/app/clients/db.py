@@ -81,7 +81,7 @@ class ConversationDB:
         salt_bytes = salt.encode('utf-8')
         return hashlib.sha256(password_bytes + salt_bytes).hexdigest()
     
-    def register_user(self, user_id: str, password: str) -> bool:
+    def register_user(self, user_id: str, password: str) -> str:
         """Register a new user with a password and create a single conversation."""
         try:
             # Check if user already exists
@@ -113,11 +113,11 @@ class ConversationDB:
             )
             
             self.conn.commit()
-            return True
+            return conversation_id
         except Exception as e:
             self.conn.rollback()
             print(f"Error registering user: {e}")
-            return False
+            return
     
     def authenticate_user(self, user_id: str, password: str) -> bool:
         """Authenticate a user with password."""

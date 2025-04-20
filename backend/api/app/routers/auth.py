@@ -33,25 +33,16 @@ async def register_user(registration: UserRegistration):
     Returns:
         User ID and a new conversation ID
     """
-    if not CONVERSATION_DB.register_user(registration.user_id, registration.password):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User ID already exists or registration failed"
-        )
-    
-    # Create a conversation for the new user
-    try:
-        conversation_id = CONVERSATION_DB.create_conversation(registration.user_id)
-        
+    if conversation_id := CONVERSATION_DB.register_user(registration.user_id, registration.password):
         return AuthResponse(
             user_id=registration.user_id,
             conversation_id=conversation_id
         )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create conversation: {str(e)}"
-        )
+
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="User ID already exists or registration failed"
+    )
 
 @router.post("/login", response_model=AuthResponse)
 async def login_user(login: UserLogin):
