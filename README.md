@@ -28,7 +28,7 @@ BOT_ID = "AI"
 
 We need three services to run the whole applications: an api, an UI server, and a slack channel subscriber. The subscriber is listening with websocket so please make sure you have an slack app websocket available. Three secrets: `OPEN_AI_KEY`, `SLACK_APP_TOKEN` and `SLACK_BOT_TOKEN` are required to enable the whole system. Please replace the secret defined in `env.sh`.
 
-Note: here is an example of how to create a slack app using websocket: ![url](https://tools.slack.dev/bolt-js/getting-started/#tokens-and-installing-apps)
+Note: here is an example of how to create a slack app using websocket: https://tools.slack.dev/bolt-js/getting-started/#tokens-and-installing-apps
 
 Follow the below instructions to run the system.
 ```
