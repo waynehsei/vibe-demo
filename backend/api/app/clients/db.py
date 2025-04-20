@@ -488,5 +488,45 @@ class ConversationDB:
     def close(self):
         self.conn.close()
 
+    def add_message_with_response_and_event(self, conversation_id: str, user_message: str, user_id: str, bot_message: str, query: str, score: float, citations: List[str] = None):
+        """Add user message, bot response, and create event in a single transaction."""
+        try:
+            self.conn.execute('BEGIN TRANSACTION')
+            
+            # Add user message
+            user_message_id = str(uuid.uuid4())
+            self.cursor.execute(
+                'INSERT INTO messages (id, conversation_id, user_id, content) VALUES (?, ?, ?, ?)',
+                (user_message_id, conversation_id, user_id, user_message)
+            )
+            
+            # Add bot message
+            bot_message_id = str(uuid.uuid4())
+            self.cursor.execute(
+                'INSERT INTO messages (id, conversation_id, user_id, content) VALUES (?, ?, ?, ?)',
+                (bot_message_id, conversation_id, BOT_ID, bot_message)
+            )
+            
+            # Update conversation timestamp
+            self.cursor.execute(
+                'UPDATE conversations SET updated_at = ? WHERE id = ?',
+                (datetime.now(), conversation_id)
+            )
+            
+            # Create event
+            event_id = str(uuid.uuid4())
+            citations_str = "|".join(citations) if citations else ""
+            key_words = "|".join(query.split())
+            
+            self.cursor.execute(
+                'INSERT INTO events (event_id, conversation_id, user_id, query, score, citations, key_words) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                (event_id, conversation_id, user_id, query, score, citations_str, key_words)
+            )
+            
+            self.conn.commit()
+        except Exception as e:
+            self.conn.rollback()
+            raise e
+
 # Initialize conversation database
 CONVERSATION_DB = ConversationDB()

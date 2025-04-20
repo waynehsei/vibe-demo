@@ -17,6 +17,8 @@
     "@mantine/hooks": "^7.17.4",
     "@mantine/notifications": "^7.17.4",
     "@tabler/icons-react": "^3.31.0",
+    "@types/js-cookie": "^3.0.6",
+    "js-cookie": "^3.0.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

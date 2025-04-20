@@ -2,7 +2,7 @@ from app.constant import OPENAI_API_KEY
 from langchain_core.messages import SystemMessage
 from langgraph.graph import MessagesState
 from langchain_openai import ChatOpenAI
-from app.repository import fetch_docs
+from app.repository import fetch_docs, MATERIAL_STORE
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 from typing import List
@@ -22,7 +22,7 @@ class CitedAnswer(BaseModel):
     )
     citations: List[str] = Field(
         ...,
-        description="The integer IDs of the SPECIFIC sources which justify the answer.",
+        description="The string IDs of the SPECIFIC sources which justify the answer.",
     )
 
 @tool
@@ -52,6 +52,9 @@ def generate(state: MessagesState):
 
     # Format into prompt
     docs_content = "\n".join(doc.content for doc in tool_messages)
+
+    print(docs_content)
+
     system_message_content = (
         "You are an assistant for question-answering tasks. "
         "Use the following pieces of retrieved context"
@@ -69,5 +72,12 @@ def generate(state: MessagesState):
     prompt = [SystemMessage(system_message_content)] + conversation_messages
 
     response = structured_llm.invoke(prompt)
-    message = AIMessage(content=response.answer, additional_kwargs={"citations": response.citations, "context": response.context})
+    
+    # Get valid file_ids from material store
+    valid_file_ids = [file_id for file_id, _ in MATERIAL_STORE.materials]
+    
+    # Filter citations to only include valid file_ids
+    filtered_citations = [citation for citation in response.citations if citation in valid_file_ids]
+    
+    message = AIMessage(content=response.answer, additional_kwargs={"citations": filtered_citations, "context": response.context})
     return {"messages": [message]}

@@ -32,7 +32,8 @@ BOT_ID = "AI"
 
 We need three services to run the whole applications: an api, a UI server, and a slack channel subscriber. The subscriber is listening with websocket so please make sure you have an slack app websocket available. Three secrets: `OPEN_AI_KEY`, `SLACK_APP_TOKEN` and `SLACK_BOT_TOKEN` are required to enable the whole system. Please replace the secret defined in `env.sh`.
 
-Follow the below instructions to run the system:
+Follow the below instructions to run the system. Note: the frontend will create a conversation_id and stored it as local cookies. The conversation_id will be lost if the api restart and result in error. In such case please clear the cookies.
+
 ```
 # install backend
 cd backend
@@ -43,6 +44,7 @@ poetry install
 source env.sh
 
 # run api
+# api running on http://localhost:8000
 cd backend/api
 python main.py
 
@@ -51,6 +53,7 @@ cd backend/subscriber
 python main.py
 
 # install frontend
+# frontend running on http://localhost:5173
 cd frontend
 npm install
 npm run dev

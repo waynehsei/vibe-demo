@@ -7,10 +7,24 @@ import { MaterialLayout } from './material/MaterialLayout';
 import { InsightLayout } from './insight/InsightLayout';
 
 export function Layout() {
-  const [currentPath, setCurrentPath] = useState('/');
+  const [currentPath, setCurrentPath] = useState('/chat');
 
   const handleNavigate = (path: string) => {
     setCurrentPath(path);
+  };
+
+  const renderLayout = () => {
+    switch (currentPath) {
+      case '/slack':
+        return <SlackLayout />;
+      case '/materials':
+        return <MaterialLayout />;
+      case '/insights':
+        return <InsightLayout />;
+      case '/chat':
+      default:
+        return <ChatLayout />;
+    }
   };
 
   return (
@@ -28,10 +42,7 @@ export function Layout() {
           flexDirection: 'column',
         }}
       >
-        {currentPath === '/chat' && <ChatLayout />}
-        {currentPath === '/slack' && <SlackLayout />}
-        {currentPath === '/materials' && <MaterialLayout />}
-        {currentPath === '/insights' && <InsightLayout />}
+        {renderLayout()}
       </Box>
     </Box>
   );

@@ -2,7 +2,7 @@ import os
 import random
 from pydantic import BaseModel
 from fastapi import APIRouter, UploadFile, File, HTTPException, status
-from app.repository import save_vector
+from app.repository import save_vector, MATERIAL_STORE
 from typing import Optional, List
 from app.constant import DATA_DIR
 
@@ -26,16 +26,14 @@ router = APIRouter(
 
 @router.get("/materials", response_model=MaterialListResponse)
 async def list_materials():
-    """List all available materials in the data directory."""
-    materials = []
-    
-    # List all files in the data directory
-    if os.path.exists(DATA_DIR):
-        for filename in os.listdir(DATA_DIR):
-            file_id, *rest = filename.split('_', 1)
-            materials.append(MaterialInfo(file_id=file_id, file_name=rest[0]))
-    
-    return MaterialListResponse(materials=materials)
+    """List all available materials from the material store."""
+    material_list = MATERIAL_STORE.get_materials()
+    return MaterialListResponse(
+        materials=[
+            MaterialInfo(file_id=file_id, file_name=file_name)
+            for file_id, file_name in material_list
+        ]
+    )
 
 @router.post("/files", response_model=FileResponse)
 async def upload_file(file: UploadFile = File(...)):
@@ -69,6 +67,9 @@ async def upload_file(file: UploadFile = File(...)):
                 status="failed",
                 error=error
             )
+        
+        # Add to material store
+        MATERIAL_STORE.add_material(file_id, file.filename)
         
         return FileResponse(
             file_id=file_id,

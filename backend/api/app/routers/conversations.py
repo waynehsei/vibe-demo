@@ -115,36 +115,30 @@ async def post_messages(
     citations = last_ai_message.additional_kwargs.get("citations", [])
     context = last_ai_message.additional_kwargs.get("context", None)
     score = evaluate_answer(payload.content, last_ai_message.content, context)
+
+    if not last_ai_message:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to process message"
+        )
     
-    if last_ai_message:
-        if citations:
-            content = f"{last_ai_message.content}\n\nsource: {''.join([f"[{c}]" for c in citations])}"
-        else:
-            content = last_ai_message.content
-        # TODO: make it transactional
-        CONVERSATION_DB.add_message(
+    content =  f"{last_ai_message.content}\n\nsource: {''.join([f"[{c}]" for c in citations])}" if citations else last_ai_message.content
+    
+    try:
+        CONVERSATION_DB.add_message_with_response_and_event(
             conversation_id=conversation_id,
+            user_message=payload.content,
             user_id=payload.user_id,
-            content=payload.content
-        )
-        CONVERSATION_DB.add_message(
-            conversation_id=conversation_id,
-            user_id=BOT_ID,
-            content=content
-        )
-        # Create event for the query
-        CONVERSATION_DB.create_event(
-            user_id=payload.user_id,
-            conversation_id=conversation_id,
+            bot_message=content,
             query=payload.content,
             score=score,
             citations=citations
         )
         return {"message": content}
-    else:
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to process message"
+            detail=f"Failed to save messages and event: {str(e)}"
         )
 
 @router.get("/conversations/{conversation_id}/summary", response_model=ConversationSummaryResponse)

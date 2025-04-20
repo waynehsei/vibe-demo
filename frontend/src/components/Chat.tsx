@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Box, ScrollArea, TextInput, Paper, Text, Avatar, rem, Group } from '@mantine/core';
-import { IconSend } from '@tabler/icons-react';
+import { Box, ScrollArea, TextInput, Paper, Text, Avatar, rem, Group, Loader, Alert } from '@mantine/core';
+import { IconSend, IconAlertCircle } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
+import { useConversation } from '../hooks/useConversation';
 
 interface ApiMessage {
   id: string;
@@ -24,13 +25,16 @@ interface Message {
 }
 
 export function Chat() {
+  const { conversationId, isLoading: isConversationLoading, error: conversationError } = useConversation();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchMessages = async () => {
+    if (!conversationId) return;
+    
     try {
-      const response = await fetch('http://localhost:8000/v1/conversations/default/messages');
+      const response = await fetch(`http://localhost:8000/v1/conversations/${conversationId}/messages`);
       if (!response.ok) {
         throw new Error(`Failed to fetch messages: ${response.statusText}`);
       }
@@ -56,15 +60,17 @@ export function Chat() {
   };
 
   useEffect(() => {
-    fetchMessages();
-  }, []);
+    if (conversationId) {
+      fetchMessages();
+    }
+  }, [conversationId]);
 
   const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isLoading || !conversationId) return;
 
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/v1/conversations/default/messages', {
+      const response = await fetch(`http://localhost:8000/v1/conversations/${conversationId}/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -107,6 +113,24 @@ export function Chat() {
   const getUserInitial = (user_id: string) => {
     return user_id.charAt(0).toUpperCase();
   };
+
+  if (isConversationLoading) {
+    return (
+      <Box style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+        <Loader size="lg" />
+      </Box>
+    );
+  }
+
+  if (conversationError) {
+    return (
+      <Box p="md">
+        <Alert icon={<IconAlertCircle size={16} />} title="Error" color="red">
+          {conversationError}
+        </Alert>
+      </Box>
+    );
+  }
 
   return (
     <Box

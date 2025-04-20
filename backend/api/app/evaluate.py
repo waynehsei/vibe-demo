@@ -17,7 +17,7 @@ def evaluate_answer(input: str, prediction: str, reference: str):
             input=input,
         )
     else:
-        evaluator = load_evaluator("score_string", llm=llm)
+        evaluator = load_evaluator("labeled_score_string", llm=llm)
         eval_result = evaluator.evaluate_strings(
             prediction=prediction,
             input=input,
