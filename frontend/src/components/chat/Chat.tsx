@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Box, ScrollArea, TextInput, Paper, Text, Avatar, rem, Group, Loader, Alert } from '@mantine/core';
 import { IconSend, IconAlertCircle } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
-import { useConversation } from '../hooks/useConversation';
 
 interface ApiMessage {
   id: string;
@@ -24,16 +23,21 @@ interface Message {
   timestamp: Date;
 }
 
-export function Chat() {
-  const { conversationId, isLoading: isConversationLoading, error: conversationError } = useConversation();
+interface ChatProps {
+  userId: string;
+  conversationId: string;
+}
+
+export function Chat({ userId, conversationId }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   const fetchMessages = async () => {
-    if (!conversationId) return;
-    
     try {
+      setError(null);
       const response = await fetch(`http://localhost:8000/v1/conversations/${conversationId}/messages`);
       if (!response.ok) {
         throw new Error(`Failed to fetch messages: ${response.statusText}`);
@@ -51,32 +55,34 @@ export function Chat() {
       setMessages(transformedMessages);
     } catch (error) {
       console.error('Error fetching messages:', error);
+      setError('Failed to load messages. Please try again later.');
       notifications.show({
         color: 'red',
         title: 'Error',
         message: 'Failed to load messages. Please try again later.',
       });
+    } finally {
+      setIsInitialLoading(false);
     }
   };
 
   useEffect(() => {
-    if (conversationId) {
-      fetchMessages();
-    }
+    fetchMessages();
   }, [conversationId]);
 
   const handleSend = async () => {
-    if (!input.trim() || isLoading || !conversationId) return;
+    if (!input.trim() || isLoading) return;
 
     setIsLoading(true);
     try {
+      setError(null);
       const response = await fetch(`http://localhost:8000/v1/conversations/${conversationId}/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          user_id: 'USER',
+          user_id: userId,
           content: input,
         }),
       });
@@ -89,6 +95,7 @@ export function Chat() {
       await fetchMessages();
     } catch (error) {
       console.error('Error sending message:', error);
+      setError('Failed to send message. Please try again.');
       notifications.show({
         color: 'red',
         title: 'Error',
@@ -100,33 +107,27 @@ export function Chat() {
   };
 
   const getUserColor = (user_id: string) => {
-    switch (user_id.toUpperCase()) {
-      case 'AI':
-        return 'green';
-      case 'USER':
-        return 'blue';
-      default:
-        return 'gray';
-    }
+    if (user_id === 'AI') return 'green';
+    return user_id === userId ? 'blue' : 'gray';
   };
 
   const getUserInitial = (user_id: string) => {
     return user_id.charAt(0).toUpperCase();
   };
 
-  if (isConversationLoading) {
+  if (isInitialLoading) {
     return (
-      <Box style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+      <Box style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', padding: rem(20) }}>
         <Loader size="lg" />
       </Box>
     );
   }
 
-  if (conversationError) {
+  if (error) {
     return (
       <Box p="md">
         <Alert icon={<IconAlertCircle size={16} />} title="Error" color="red">
-          {conversationError}
+          {error}
         </Alert>
       </Box>
     );
@@ -160,7 +161,7 @@ export function Chat() {
               display: 'flex',
               gap: rem(8),
               marginBottom: rem(16),
-              flexDirection: message.user_id === 'USER' ? 'row-reverse' : 'row',
+              flexDirection: message.user_id === userId ? 'row-reverse' : 'row',
             }}
           >
             <Avatar
@@ -176,7 +177,7 @@ export function Chat() {
               style={{
                 maxWidth: '70%',
                 backgroundColor:
-                  message.user_id === 'USER'
+                  message.user_id === userId
                     ? 'var(--mantine-primary-color-light)'
                     : 'var(--mantine-color-white)',
               }}
@@ -187,7 +188,7 @@ export function Chat() {
                   {message.timestamp.toLocaleTimeString()}
                 </Text>
                 <Text size="xs" c="dimmed">
-                  {message.user_id}
+                  {message.user_id === userId ? 'You' : message.user_id}
                 </Text>
               </Group>
             </Paper>

@@ -1,7 +1,13 @@
 import { Box, Paper, Text, rem } from '@mantine/core';
 import { Chat } from './Chat';
 
-export function ChatLayout() {
+interface ChatLayoutProps {
+  userId: string;
+  conversationId: string;
+  onLogout: () => void;
+}
+
+export function ChatLayout({ userId, conversationId, onLogout }: ChatLayoutProps) {
   return (
     <Box
       style={{
@@ -18,9 +24,9 @@ export function ChatLayout() {
           }}
         >
           <Text size="xl" fw={700}>Chat Assistant</Text>
-          <Text size="sm" c="dimmed">Start a conversation with the AI</Text>
+          <Text size="sm" c="dimmed">User: {userId}</Text>
         </Box>
-        <Chat />
+        <Chat userId={userId} conversationId={conversationId} />
       </Paper>
     </Box>
   );

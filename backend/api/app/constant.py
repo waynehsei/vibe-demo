@@ -8,7 +8,5 @@ os.makedirs(DATA_DIR, exist_ok=True)
 OPENAI_API_KEY=os.getenv("OPENAI_API_KEY")
 
 # USER_CONVERSATION
-DEFAULT_CONVERSATION_ID='default'
 SLACK_CONVERSATION_ID='slack'
-USER_ID = "USER"
 BOT_ID = "AI"

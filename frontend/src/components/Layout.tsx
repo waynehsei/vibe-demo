@@ -1,12 +1,18 @@
 import { useState } from 'react';
 import { Box } from '@mantine/core';
 import { Sidebar } from './Sidebar';
-import { ChatLayout } from './ChatLayout';
+import { ChatLayout } from './chat/ChatLayout';
 import { SlackLayout } from './slack/SlackLayout';
 import { MaterialLayout } from './material/MaterialLayout';
 import { InsightLayout } from './insight/InsightLayout';
 
-export function Layout() {
+interface LayoutProps {
+  userId: string;
+  conversationId: string;
+  onLogout: () => void;
+}
+
+export function Layout({ userId, conversationId, onLogout }: LayoutProps) {
   const [currentPath, setCurrentPath] = useState('/chat');
 
   const handleNavigate = (path: string) => {
@@ -23,7 +29,11 @@ export function Layout() {
         return <InsightLayout />;
       case '/chat':
       default:
-        return <ChatLayout />;
+        return <ChatLayout 
+          userId={userId} 
+          conversationId={conversationId} 
+          onLogout={onLogout} 
+        />;
     }
   };
 
@@ -34,7 +44,11 @@ export function Layout() {
         minHeight: '100vh',
       }}
     >
-      <Sidebar currentPath={currentPath} onNavigate={handleNavigate} />
+      <Sidebar 
+        currentPath={currentPath} 
+        onNavigate={handleNavigate} 
+        onLogout={onLogout} 
+      />
       <Box
         style={{
           flex: 1,

@@ -1,5 +1,5 @@
-import { IconRocket, IconPhoto, IconNotes, IconBulb, IconLink, IconKey, IconMessage, IconBrandSlack, IconFiles, IconChartBar } from '@tabler/icons-react';
-import { Box, rem } from '@mantine/core';
+import { IconRocket, IconPhoto, IconNotes, IconBulb, IconLink, IconKey, IconMessage, IconBrandSlack, IconFiles, IconChartBar, IconLogout } from '@tabler/icons-react';
+import { Box, rem, Tooltip } from '@mantine/core';
 
 interface NavItem {
   icon: typeof IconRocket;
@@ -17,9 +17,10 @@ const navItems: NavItem[] = [
 interface SidebarProps {
   currentPath: string;
   onNavigate: (path: string) => void;
+  onLogout: () => void;
 }
 
-export function Sidebar({ currentPath, onNavigate }: SidebarProps) {
+export function Sidebar({ currentPath, onNavigate, onLogout }: SidebarProps) {
   return (
     <Box
       component="nav"
@@ -28,13 +29,15 @@ export function Sidebar({ currentPath, onNavigate }: SidebarProps) {
         paddingBottom: 0,
         height: '100vh',
         width: rem(60),
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
       <Box
         style={{
           marginLeft: rem(-8),
           marginRight: rem(-8),
-          height: '100%',
+          flex: 1,
         }}
       >
         <Box
@@ -48,39 +51,75 @@ export function Sidebar({ currentPath, onNavigate }: SidebarProps) {
           }}
         >
           {navItems.map((item) => (
-            <Box
-              key={item.label}
-              component="a"
-              href="#"
-              onClick={(event) => {
-                event.preventDefault();
-                onNavigate(item.path);
-              }}
-              style={{
-                width: rem(44),
-                height: rem(44),
-                borderRadius: rem(8),
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--mantine-color-gray-7)',
-                transition: 'all 150ms ease',
-                ':hover': {
-                  backgroundColor: 'var(--mantine-color-gray-0)',
-                },
-                ...(currentPath === item.path && {
-                  backgroundColor: 'var(--mantine-primary-color-light)',
-                  color: 'var(--mantine-primary-color)',
+            <Tooltip key={item.label} label={item.label} position="right">
+              <Box
+                component="a"
+                href="#"
+                onClick={(event) => {
+                  event.preventDefault();
+                  onNavigate(item.path);
+                }}
+                style={{
+                  width: rem(44),
+                  height: rem(44),
+                  borderRadius: rem(8),
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--mantine-color-gray-7)',
+                  transition: 'all 150ms ease',
                   ':hover': {
-                    backgroundColor: 'var(--mantine-primary-color-light)',
+                    backgroundColor: 'var(--mantine-color-gray-0)',
                   },
-                }),
-              }}
-            >
-              <item.icon size="1.2rem" stroke={1.5} />
-            </Box>
+                  ...(currentPath === item.path && {
+                    backgroundColor: 'var(--mantine-primary-color-light)',
+                    color: 'var(--mantine-primary-color)',
+                    ':hover': {
+                      backgroundColor: 'var(--mantine-primary-color-light)',
+                    },
+                  }),
+                }}
+              >
+                <item.icon size="1.2rem" stroke={1.5} />
+              </Box>
+            </Tooltip>
           ))}
         </Box>
+      </Box>
+      
+      {/* Logout Button */}
+      <Box
+        style={{
+          padding: rem(16),
+          display: 'flex',
+          justifyContent: 'center',
+        }}
+      >
+        <Tooltip label="Logout" position="right">
+          <Box
+            component="a"
+            href="#"
+            onClick={(event) => {
+              event.preventDefault();
+              onLogout();
+            }}
+            style={{
+              width: rem(44),
+              height: rem(44),
+              borderRadius: rem(8),
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--mantine-color-red-6)',
+              transition: 'all 150ms ease',
+              ':hover': {
+                backgroundColor: 'var(--mantine-color-red-0)',
+              },
+            }}
+          >
+            <IconLogout size="1.2rem" stroke={1.5} />
+          </Box>
+        </Tooltip>
       </Box>
     </Box>
   );

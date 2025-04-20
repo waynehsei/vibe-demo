@@ -1,8 +1,10 @@
 import sqlite3
 from datetime import datetime, timedelta
 import uuid
+import hashlib
+import secrets
 from typing import List, Dict, Optional, Tuple
-from app.constant import DEFAULT_CONVERSATION_ID, SLACK_CONVERSATION_ID, USER_ID, BOT_ID
+from app.constant import SLACK_CONVERSATION_ID, BOT_ID
 
 class ConversationDB:
     def __init__(self, db_path: str = 'conversations.db'):
@@ -15,6 +17,17 @@ class ConversationDB:
         self.cursor.execute('DROP TABLE IF EXISTS messages')
         self.cursor.execute('DROP TABLE IF EXISTS conversations')
         self.cursor.execute('DROP TABLE IF EXISTS events')
+        self.cursor.execute('DROP TABLE IF EXISTS users')
+        
+        # Create users table
+        self.cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            user_id TEXT PRIMARY KEY,
+            password_hash TEXT NOT NULL,
+            salt TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        ''')
         
         # Create conversations table
         self.cursor.execute('''
@@ -22,7 +35,8 @@ class ConversationDB:
             id TEXT PRIMARY KEY,
             user_id TEXT NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users (user_id)
         )
         ''')
         
@@ -53,23 +67,89 @@ class ConversationDB:
         )
         ''')
         
-        # Initialize default conversations
         self.cursor.execute(
             'INSERT INTO conversations (id, user_id) VALUES (?, ?)',
-            (DEFAULT_CONVERSATION_ID, USER_ID)
-        )
-        self.cursor.execute(
-            'INSERT INTO conversations (id, user_id) VALUES (?, ?)',
-            (SLACK_CONVERSATION_ID, USER_ID)
+            (SLACK_CONVERSATION_ID, "admin")
         )
         
-        # Add welcome message to default conversation
-        self.cursor.execute(
-            'INSERT INTO messages (id, conversation_id, user_id, content) VALUES (?, ?, ?, ?)',
-            (str(uuid.uuid4()), DEFAULT_CONVERSATION_ID, BOT_ID, "Hello! How can I help you today?")
-        )
         
         self.conn.commit()
+    
+    def _hash_password(self, password: str, salt: str) -> str:
+        """Hash a password with a salt using SHA-256."""
+        password_bytes = password.encode('utf-8')
+        salt_bytes = salt.encode('utf-8')
+        return hashlib.sha256(password_bytes + salt_bytes).hexdigest()
+    
+    def register_user(self, user_id: str, password: str) -> bool:
+        """Register a new user with a password and create a single conversation."""
+        try:
+            # Check if user already exists
+            self.cursor.execute(
+                'SELECT user_id FROM users WHERE user_id = ?',
+                (user_id,)
+            )
+            if self.cursor.fetchone():
+                return False
+            
+            # Generate salt and hash password
+            salt = secrets.token_hex(16)
+            password_hash = self._hash_password(password, salt)
+            
+            # Start transaction for creating user and conversation together
+            self.conn.execute('BEGIN TRANSACTION')
+            
+            # Insert user
+            self.cursor.execute(
+                'INSERT INTO users (user_id, password_hash, salt) VALUES (?, ?, ?)',
+                (user_id, password_hash, salt)
+            )
+            
+            # Create a single conversation for this user
+            conversation_id = str(uuid.uuid4())
+            self.cursor.execute(
+                'INSERT INTO conversations (id, user_id) VALUES (?, ?)',
+                (conversation_id, user_id)
+            )
+            
+            self.conn.commit()
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            print(f"Error registering user: {e}")
+            return False
+    
+    def authenticate_user(self, user_id: str, password: str) -> bool:
+        """Authenticate a user with password."""
+        try:
+            # Get user's salt and password hash
+            self.cursor.execute(
+                'SELECT password_hash, salt FROM users WHERE user_id = ?',
+                (user_id,)
+            )
+            result = self.cursor.fetchone()
+            if not result:
+                return False
+            
+            stored_hash, salt = result
+            
+            # Hash the provided password with the stored salt
+            calculated_hash = self._hash_password(password, salt)
+            
+            # Compare hashes
+            return calculated_hash == stored_hash
+        except Exception as e:
+            print(f"Error authenticating user: {e}")
+            return False
+        
+    def get_user_conversation_id(self, user_id: str) -> Optional[str]:
+        """Get the conversation ID for a user (each user has exactly one conversation)."""
+        self.cursor.execute(
+            'SELECT id FROM conversations WHERE user_id = ?',
+            (user_id,)
+        )
+        result = self.cursor.fetchone()
+        return result[0] if result else None
     
     def create_conversation(self, user_id: str) -> str:
         conversation_id = str(uuid.uuid4())

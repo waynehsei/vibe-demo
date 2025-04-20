@@ -17,23 +17,20 @@ The system achiectures are plan as following:
 
 
 ## Development
-There are two conversations created by default:
+There is one conversations created by default
 - slack: conversation subscribed from a slack channel
-- default: conversation for the playground
 
-Conversation and user CRUD / authencation is not supported in the current version, i.e. any user event received from the slack channel will also be included in the chat history / analytic report. Meanwhile, we have a default user_id `USER` for the chat playground. There is addional role for bot `AI` to differetiate the messages between user and ai.
+Conversation and user CRUD / authencation is supported. A new conversation is created for each user. There is addional user for bot `AI` to differetiate the messages between user and ai.
 ```
-DEFAULT_CONVERSATION_ID='default'
 SLACK_CONVERSATION_ID='slack'
-USER_ID = "USER"
 BOT_ID = "AI"
-
 ```
 
-We need three services to run the whole applications: an api, a UI server, and a slack channel subscriber. The subscriber is listening with websocket so please make sure you have an slack app websocket available. Three secrets: `OPEN_AI_KEY`, `SLACK_APP_TOKEN` and `SLACK_BOT_TOKEN` are required to enable the whole system. Please replace the secret defined in `env.sh`.
+We need three services to run the whole applications: an api, an UI server, and a slack channel subscriber. The subscriber is listening with websocket so please make sure you have an slack app websocket available. Three secrets: `OPEN_AI_KEY`, `SLACK_APP_TOKEN` and `SLACK_BOT_TOKEN` are required to enable the whole system. Please replace the secret defined in `env.sh`.
 
-Follow the below instructions to run the system. Note: the frontend will create a conversation_id and stored it as local cookies. The conversation_id will be lost if the api restart and result in error. In such case please clear the cookies.
+Note: here is an example of how to create a slack app using websocket: ![url](https://tools.slack.dev/bolt-js/getting-started/#tokens-and-installing-apps)
 
+Follow the below instructions to run the system.
 ```
 # install backend
 cd backend

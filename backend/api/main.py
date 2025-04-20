@@ -2,7 +2,7 @@ import uvicorn
 import os
 import shutil
 from fastapi import FastAPI
-from app.routers import material, conversations, analytics
+from app.routers import material, conversations, analytics, auth
 from app.constant import DATA_DIR
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -31,6 +31,7 @@ app.add_middleware(
 # Initialize data directory on startup
 init_data_directory()
 
+app.include_router(auth.router)  # Include auth router first
 app.include_router(material.router)
 app.include_router(conversations.router)
 app.include_router(analytics.router)
